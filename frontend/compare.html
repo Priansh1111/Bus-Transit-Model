@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mumbai vs Singapore Comparison</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <header class="navbar">
+    <h1>City Transit Comparison Dashboard</h1>
+    <a href="index.html" class="back-btn">← Back</a>
+  </header>
+
+  <main class="container">
+    <h2>Prediction Accuracy Comparison</h2>
+    <canvas id="accuracyChart"></canvas>
+  <!-- Actual vs Predicted chart added below (from Comparison.py outputs) -->
+  <h3>Actual vs Predicted Comparison</h3>
+  <canvas id="actualPredChart"></canvas>
+
+    <h2>Crowd vs User Experience</h2>
+    <canvas id="crowdChart"></canvas>
+  </main>
+
+  <script src="js/compare.js"></script>
+</body>
+</html>

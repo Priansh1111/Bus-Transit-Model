@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Singapore Bus ETA Predictions</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .navbar {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      margin-bottom: 30px;
+      text-align: center;
+    }
+
+    .navbar h1 {
+      color: #667eea;
+      font-size: 28px;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    .form-card {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .form-card h2 {
+      color: #333;
+      margin-bottom: 25px;
+      font-size: 24px;
+    }
+
+    label {
+      display: block;
+      margin-top: 15px;
+      margin-bottom: 8px;
+      color: #555;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    select, input[type="number"] {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #e0e0e0;
+      border-radius: 6px;
+      font-size: 16px;
+      transition: border-color 0.3s;
+    }
+
+    select:focus, input[type="number"]:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    button {
+      width: 100%;
+      margin-top: 25px;
+      padding: 14px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    .result-card {
+      margin-top: 30px;
+      padding: 20px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      border-left: 4px solid #667eea;
+    }
+
+    .result-card h3 {
+      color: #333;
+      margin-bottom: 15px;
+    }
+
+    .result-card p {
+      margin: 8px 0;
+      color: #555;
+      line-height: 1.6;
+    }
+
+    table {
+      width: 100%;
+      margin-top: 20px;
+      border-collapse: collapse;
+      background: white;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    th {
+      background: #667eea;
+      color: white;
+      padding: 12px;
+      text-align: left;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    td {
+      padding: 12px;
+      border-bottom: 1px solid #e0e0e0;
+      color: #555;
+      font-size: 14px;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:hover {
+      background: #f8f9fa;
+    }
+
+    .error {
+      color: #dc3545;
+      padding: 15px;
+      border: 1px solid #dc3545;
+      border-radius: 6px;
+      background: #fff5f5;
+    }
+
+    .warning {
+      color: #ff9800;
+      padding: 15px;
+      border: 1px solid #ff9800;
+      border-radius: 6px;
+      background: #fff8e1;
+    }
+
+    .loading {
+      text-align: center;
+      color: #667eea;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <header class="navbar">
+    <h1>🚌 Singapore Bus ETA Predictions</h1>
+  </header>
+
+  <main class="container">
+    <div class="form-card">
+      <h2>Select Bus and Stops</h2>
+
+      <label for="busSelect">Bus Service:</label>
+      <select id="busSelect">
+        <option>Loading buses...</option>
+      </select>
+
+      <label for="startStop">Start Stop Number:</label>
+      <input type="number" id="startStop" min="1" value="1" />
+
+      <label for="endStop">End Stop Number:</label>
+      <input type="number" id="endStop" min="2" value="5" />
+
+      <button onclick="predictTrip()">🔍 Predict Trip</button>
+
+      <div class="result-card" id="resultdiv" style="display: none;"></div>
+    </div>
+  </main>
+
+  <script>
+    // Configuration
+    const API_BASE = "http://localhost:8000";
+
+    // Load bus list on page load
+    async function loadBusList() {
+      const url = `${API_BASE}/bus/singapore/list`;
+      const select = document.getElementById("busSelect");
+      
+      // Show loading state
+      select.innerHTML = "<option>Loading buses...</option>";
+
+      try {
+        console.log("Fetching bus list from:", url);
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        console.log("Bus list received:", data);
+        
+        // Clear and populate dropdown
+        select.innerHTML = "";
+        
+        if (!data.buses || data.buses.length === 0) {
+          select.innerHTML = "<option>No buses available</option>";
+          return;
+        }
+
+        data.buses.forEach((bus) => {
+          const option = document.createElement("option");
+          option.value = bus;
+          option.textContent = `Bus ${bus}`;
+          select.appendChild(option);
+        });
+        
+        console.log(`Loaded ${data.buses.length} buses`);
+      } catch (err) {
+        console.error("Failed to load buses:", err);
+        select.innerHTML = "<option>Error loading buses</option>";
+        
+        // Show error to user
+        const resultDiv = document.getElementById("resultdiv");
+        resultDiv.style.display = "block";
+        resultDiv.innerHTML = `
+          <div class="error">
+            <b>⚠️ Error loading bus list:</b><br>
+            ${err.message}<br><br>
+            <small>Make sure the API is running at ${API_BASE}</small>
+          </div>
+        `;
+      }
+    }
+
+    // Predict trip
+    async function predictTrip() {
+      const busId = document.getElementById("busSelect").value;
+      const startStop = document.getElementById("startStop").value;
+      const endStop = document.getElementById("endStop").value;
+      const resultDiv = document.getElementById("resultdiv");
+
+      // Show result div
+      resultDiv.style.display = "block";
+
+      // Validation
+      if (!busId || busId === "Loading buses..." || busId === "Error loading buses" || busId === "No buses available") {
+        resultDiv.innerHTML = `<div class="error">⚠️ Please select a valid bus</div>`;
+        return;
+      }
+
+      if (parseInt(startStop) >= parseInt(endStop)) {
+        resultDiv.innerHTML = `<div class="error">⚠️ Start stop must be less than end stop</div>`;
+        return;
+      }
+
+      const apiUrl = `${API_BASE}/bus/singapore/${busId}/predict_trip_range?start_stop=${startStop}&end_stop=${endStop}`;
+      
+      console.log("Fetching prediction from:", apiUrl);
+      resultDiv.innerHTML = '<div class="loading">⏳ Loading prediction...</div>';
+
+      try {
+        const response = await fetch(apiUrl);
+        console.log("Response status:", response.status);
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error("API Error:", errorText);
+          throw new Error(`HTTP ${response.status}: ${errorText}`);
+        }
+        
+        const data = await response.json();
+        console.log("Prediction data:", data);
+
+        // Check if there's a message (no predictions)
+        if (data.message) {
+          resultDiv.innerHTML = `
+            <div class="warning">
+              <b>ℹ️ ${data.message}</b>
+            </div>
+          `;
+          return;
+        }
+
+        // Check if predictions exist
+        if (!data.next_service || !data.next_service.predictions || data.next_service.predictions.length === 0) {
+          resultDiv.innerHTML = `
+            <div class="warning">
+              <b>No prediction data available for this route</b>
+            </div>
+          `;
+          return;
+        }
+
+        // Build predictions table
+        const predictions = data.next_service.predictions
+          .map(
+            (p) => `
+            <tr>
+              <td>${p.current_stop}</td>
+              <td>${p.next_stop}</td>
+              <td><strong>${p.predicted_time}</strong></td>
+              <td>${p.actual_time || 'N/A'}</td>
+              <td>${p.crowd || 'N/A'}</td>
+              <td>${p.traffic || 'N/A'}</td>
+              <td>${p.user_experience || 'N/A'}</td>
+            </tr>`
+          )
+          .join("");
+
+        resultDiv.innerHTML = `
+          <h3>🚌 Bus ${data.bus}</h3>
+          <p><b>📅 Time:</b> ${data.current_time}</p>
+          <p><b>📍 Route:</b> ${data.range_prediction.from_stop} → ${data.range_prediction.to_stop}</p>
+          <p><b>🕐 Arrival at Start:</b> ${data.range_prediction.arrival_at_start}</p>
+          <p><b>🕐 Arrival at End:</b> ${data.range_prediction.arrival_at_end}</p>
+          <p><b>👥 Crowd Level:</b> ${data.range_prediction.crowd}</p>
+          <p><b>🚦 Traffic:</b> ${data.range_prediction.traffic}</p>
+          
+          <h4 style="margin-top: 20px; margin-bottom: 10px; color: #333;">Stop-by-Stop Predictions:</h4>
+          <table>
+            <thead>
+              <tr>
+                <th>Current Stop</th>
+                <th>Next Stop</th>
+                <th>Predicted Time</th>
+                <th>Actual Time</th>
+                <th>Crowd</th>
+                <th>Traffic</th>
+                <th>User Exp.</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${predictions}
+            </tbody>
+          </table>
+        `;
+      } catch (err) {
+        console.error("Prediction error:", err);
+        resultDiv.innerHTML = `
+          <div class="error">
+            <b>❌ Error:</b><br>
+            ${err.message}<br><br>
+            <small>Check the browser console (F12) for more details</small>
+          </div>
+        `;
+      }
+    }
+
+    // Initialize when page loads
+    window.addEventListener("DOMContentLoaded", () => {
+      console.log("Page loaded, initializing...");
+      loadBusList();
+    });
+
+    // Make function available globally
+    window.predictTrip = predictTrip;
+  </script>
+</body>
+</html>
