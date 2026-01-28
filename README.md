@@ -1,7 +1,7 @@
-# Signal Detector - Smart Bus Transit System
+#Smart Bus Transit System
 
 AI-powered bus transit prediction and comparison dashboard. This project provides a FastAPI backend for bus ETA predictions and a simple frontend UI to explore Singapore routes and compare results with Mumbai.
-
+https://github.com/Priansh1111/Bus-Transit-Model/blob/master/README.md
 ## Features
 - Predict stop-to-stop travel times for a selected bus and route segment
 - View crowd, traffic, and user experience context with each prediction
@@ -76,10 +76,14 @@ Outputs:
 
 ## Screenshots
 ### Singapore Predictions UI
-![Singapore Bus ETA Predictions](assets/ui.png)
+[Singapore Bus ETA Predictions]
+<img width="1919" height="912" alt="image" src="https://github.com/user-attachments/assets/498e188b-a5b3-4405-b9d3-5615755efa64" />
+
 
 ### Model Performance Comparison
-![Model Performance: Singapore vs Mumbai](assets/comparison.png)
+[Model Performance: Singapore vs Mumbai]
+<img width="1196" height="562" alt="image" src="https://github.com/user-attachments/assets/d2152dc7-9587-471c-a666-69ecadc4e2a3" />
+
 
 ## License
 Add a license if you plan to share or distribute this project.
